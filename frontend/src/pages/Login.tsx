@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { userLogin, adminLogin } from '../redux/slices/authSlices';
-import { AppDispatch, RootState } from '../redux/store';
+import { useNavigate } from 'react-router-dom'; 
+import { AppDispatch, RootState } from '../redux/store'; 
+import { loginAndLoadUser } from '../redux/slices/authSlices';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -10,12 +10,21 @@ const Login: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+    
+  //     await dispatch(userLogin({ email, password }));
+  //     navigate('/store')
+  //   alert("hh")
+  // };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-      await dispatch(userLogin({ email, password }));
-      navigate('/store')
-    alert("hh")
+    // Dispatch the loginAndLoadUser thunk
+    await dispatch(loginAndLoadUser({ email, password }));
+    
+    // Navigate to the store page
+    navigate('/store');
   };
 
   const handleSignupRedirect = () => {

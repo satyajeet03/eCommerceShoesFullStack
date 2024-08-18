@@ -2,6 +2,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { loginUser, signupUser, loginAdmin, signupAdmin, fetchUserProfile } from '../../services/authServices'; // Import service functions 
 import { useNavigate } from 'react-router-dom';
+import { AppDispatch, RootState } from '../store';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -88,6 +89,23 @@ export const loadUserFromToken = createAsyncThunk(
     }
   }
 );
+
+export const loginAndLoadUser = createAsyncThunk<void, { email: string; password: string }, { dispatch: AppDispatch; state: RootState }>(
+  'auth/loginAndLoadUser',
+  async ({ email, password }, { dispatch, getState }) => {
+    const userToken = await dispatch(userLogin({ email, password }));
+    
+    if (userToken.payload) {
+      await dispatch(setToken(userToken.payload.token));
+      
+      const token = getState().auth.token;
+      
+      if (token) {
+        await dispatch(loadUserFromToken());
+      }
+    }
+  }
+);
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -146,6 +164,16 @@ const authSlice = createSlice({
         state.loading = false;
         state.isAuthenticated = false;
         state.token = null;
+        state.error = action.payload as string;
+      })
+      .addCase(loginAndLoadUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(loginAndLoadUser.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(loginAndLoadUser.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
       });
   },

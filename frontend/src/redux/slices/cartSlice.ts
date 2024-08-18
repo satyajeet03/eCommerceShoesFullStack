@@ -1,5 +1,4 @@
-import { createSlice,createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { fetchUserCart } from '../../services/authServices';
+import { createSlice,createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'; 
 import axios from 'axios';
 
 export interface CartItem {
