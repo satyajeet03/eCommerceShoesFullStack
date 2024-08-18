@@ -40,13 +40,18 @@ export const fetchCart = createAsyncThunk(
             Authorization: `Bearer ${token}`,
           },
         });
-        return response.data.map((item: any) => ({
-            _id: item.productId._id,
-            name: item.productId.name,
-            price: item.productId.price,
-            quantity: item.quantity,
-            imageUrl: item.productId.imageUrl,
-        }));// Assumes API returns an array of cart items
+        console.log(response)
+        const filteredData = response.data
+        .filter((item: any) => item.productId !== null)
+        .map((item: any) => ({
+          _id: item.productId._id,
+          name: item.productId.name,
+          price: item.productId.price,
+          quantity: item.quantity,
+          imageUrl: item.productId.imageUrl,
+        }));
+
+      return filteredData;
       } catch (error:any) {
         return rejectWithValue(error.response.data);
       }
@@ -97,10 +102,12 @@ const cartSlice = createSlice({
         state.loading = true;
       })
       .addCase(fetchCart.fulfilled, (state, action) => {
+        console.log('Action Payload:', action.payload); 
         state.products = action.payload;
         state.loading = false;
       })
       .addCase(fetchCart.rejected, (state, action) => {
+        console.log('Fetch Cart Rejected:', action.payload);
         state.error = action.payload as string;
         state.loading = false;
       });

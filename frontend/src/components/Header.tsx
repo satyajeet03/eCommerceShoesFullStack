@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { RootState } from '../redux/store';
+import { AppDispatch, RootState } from '../redux/store';
 import CartModal from './CartModal';
-import { logout } from '../redux/slices/authSlices';
-import { clearCart } from '../redux/slices/cartSlice';
+import { loadUserFromToken, logout, setToken } from '../redux/slices/authSlices';
+import { clearCart, fetchCart } from '../redux/slices/cartSlice';
+import { useAuth } from '../hooks/useAuth';
 
 const Header: React.FC = () => {
    const [cartModal , setCartModalOpen] = useState<boolean>(false)
    const products = useSelector((state: RootState) => state.cart.products || []);
+   const { isAuthenticated, isAdmin, token,user } = useSelector((state: RootState) => state.auth);
+   console.log(user)
+   console.log(products)
+   const dispatch = useDispatch<AppDispatch>();
+  //  useEffect(() => {
+  //   const { token } = useAuth();
+  //   if (token) {
+  //     dispatch(setToken(token));
+  //     dispatch(loadUserFromToken());
+  //   }
+  // }, [dispatch]);
    const handleCartModal = () => {
     setCartModalOpen(!cartModal)
    }
@@ -16,11 +28,16 @@ const Header: React.FC = () => {
        setCartModalOpen(false)
    }
    //const totalItems = products.reduce((total, product) => total + product.quantity, 0); 
+   useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchCart(token!)); // Dispatch fetchCart with the token
+    }
+  }, [dispatch, isAuthenticated, token]);
    const totalItems = Array.isArray(products)
    ? products.reduce((total, product) => total + (product.quantity || 0), 0)
    : 0;
-   const { isAuthenticated, isAdmin } = useSelector((state: RootState) => state.auth);
-   const dispatch = useDispatch();
+   console.log(totalItems) 
+
    const navigate = useNavigate();
    const handleLogout = () => {
     dispatch(logout());
@@ -64,6 +81,14 @@ const Header: React.FC = () => {
           </span>
         )}
       </div>
+      <div>
+      {isAuthenticated ? (
+        <p>Welcome, {user?.name}!</p>
+      ) : (
+        <p>Please log in.</p>
+      )}
+    </div>
+
       </nav>
     </header>
 

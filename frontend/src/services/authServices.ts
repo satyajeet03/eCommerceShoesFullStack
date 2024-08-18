@@ -21,7 +21,7 @@ export const signupAdmin = async (name: string, email: string, password: string)
     return response.data; // Expect { token, user }
 };
 // Fetch user cart data
-export const fetchUserCart = async () => {
-    const response = await api.get('/cart'); // Token is automatically added by interceptor
-    return response.data; // Expect { products: CartItem[] }
-};
+export const fetchUserProfile = async () => {
+    const response = await api.get('/users/profile'); // Token is automatically added by interceptor
+    return response.data; // Expect user object
+  };

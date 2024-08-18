@@ -5,7 +5,7 @@ import Shoe from '../models/Shoe';
 export const addToCart = asyncHandler(async (req:any, res) => {
   const { productId, quantity } = req.body;
   const userId = req.user?.id;
-
+  const { items } = req.body;
   const user = await User.findById(userId);
 
   if (!user) {
@@ -13,15 +13,18 @@ export const addToCart = asyncHandler(async (req:any, res) => {
     throw new Error('User not found');
   }
 
-  const itemIndex = user.cart.findIndex(item => item.productId.toString() === productId);
+  items.forEach((item: { productId: string; quantity: number }) => {
+    const itemIndex = user.cart.findIndex(cartItem => cartItem.productId.toString() === item.productId);
 
-  if (itemIndex > -1) {
-    // Update existing item
-    user.cart[itemIndex].quantity = quantity;
-  } else {
-    // Add new item
-    user.cart.push({ productId, quantity });
-  }
+    if (itemIndex > -1) {
+      // Update existing item
+      user.cart[itemIndex].quantity += item.quantity;
+    } else {
+      // Add new item
+      user.cart.push({ productId: item.productId, quantity: item.quantity });
+    }
+  });
+
 
   await user.save();
 

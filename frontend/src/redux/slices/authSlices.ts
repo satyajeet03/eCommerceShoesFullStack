@@ -1,6 +1,6 @@
 // src/redux/slices/authSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { loginUser, signupUser, loginAdmin, signupAdmin } from '../../services/authServices'; // Import service functions
+import { loginUser, signupUser, loginAdmin, signupAdmin, fetchUserProfile } from '../../services/authServices'; // Import service functions
 import api from '../../services/api'; // Import the configured api instance
 
 interface AuthState {
@@ -72,15 +72,24 @@ export const adminSignup = createAsyncThunk(
   }
 );
 
+export const loadUserFromToken = createAsyncThunk(
+  'auth/loadUserFromToken',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetchUserProfile();
+      return response; // Expect user object
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || 'Failed to load user');
+    }
+  }
+);
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     logout(state) {
-      state.isAuthenticated = false;
-      state.isAdmin = false;
-      state.user = null;
       state.token = null;
+      state.isAuthenticated = false;
       localStorage.removeItem('token');
     },
     setToken(state, action) {
@@ -104,46 +113,33 @@ const authSlice = createSlice({
         state.token = action.payload.token;
         state.loading = false;
       })
-      .addCase(adminLogin.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
-        state.isAdmin = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.loading = false;
-      })
-      .addCase(adminSignup.fulfilled, (state, action) => {
-        state.isAuthenticated = true;
-        state.isAdmin = true;
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        state.loading = false;
-      })
+     
       .addCase(userLogin.pending, (state) => {
         state.loading = true;
       })
+      .addCase(userSignup.pending, (state) => {
+        state.loading = true;
+      })
+     
       .addCase(userLogin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      })
-      .addCase(userSignup.pending, (state) => {
-        state.loading = true;
       })
       .addCase(userSignup.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      .addCase(adminLogin.pending, (state) => {
+      .addCase(loadUserFromToken.pending, (state) => {
         state.loading = true;
       })
-      .addCase(adminLogin.rejected, (state, action) => {
+      .addCase(loadUserFromToken.fulfilled, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.isAuthenticated = true;
       })
-      .addCase(adminSignup.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(adminSignup.rejected, (state, action) => {
+      .addCase(loadUserFromToken.rejected, (state, action) => {
         state.loading = false;
+        state.isAuthenticated = false;
+        state.token = null;
         state.error = action.payload as string;
       });
   },
@@ -151,3 +147,5 @@ const authSlice = createSlice({
 
 export const { logout, setToken } = authSlice.actions;
 export default authSlice.reducer;
+
+ 

@@ -7,9 +7,10 @@ import Login from '../pages/Login';
 import ProtectedRoute from '../routes/ProtectedRputes';
 import AdminLogin from '../pages/AdminLogin';
 import Signup from '../pages/Singup';
-import Store from '../pages/Store';
+import Store from '../pages/Store';  
 
-function Layout() {
+function Layout() {  
+ 
   return (
     <Router>
     <Header />

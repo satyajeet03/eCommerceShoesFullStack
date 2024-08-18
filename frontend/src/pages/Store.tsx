@@ -4,13 +4,23 @@ import { useEffect } from 'react';
 import { fetchShoes } from '../redux/slices/shoesSlice';
 import { addToCart, fetchCart } from '../redux/slices/cartSlice';
 import { useAuth } from '../hooks/useAuth';
+import { loadUserFromToken, setToken } from '../redux/slices/authSlices';
+import Header from '../components/Header';
 
 const Store = () => {
   const productsInCart = useSelector((state: RootState) => state.cart.products );
+  console.log(productsInCart)
   const { shoes, loading, error } = useSelector((state: RootState) => state.shoes);
   const dispatch: AppDispatch = useDispatch();
   const { token } = useAuth(); 
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  // useEffect(() => {
+  //   const { token } = useAuth();
+  //   if (token) {
+  //     dispatch(setToken(token));
+  //     dispatch(loadUserFromToken());
+  //   }
+  // }, [dispatch]);
   useEffect(() => {
     dispatch(fetchShoes());
     if (isAuthenticated && token) {
@@ -33,6 +43,9 @@ const isInCart = (productId: string) => {
   };
   
   return (
+    <>
+    {/* {isAuthenticated ? <Header/> : "You are not logged in"} */}
+
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mt-12 mb-8">All Products</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -60,6 +73,7 @@ const isInCart = (productId: string) => {
         ))}
       </div>
     </div>
+    </>
   );
 };
 
