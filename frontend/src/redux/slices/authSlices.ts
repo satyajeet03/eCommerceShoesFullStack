@@ -1,7 +1,7 @@
 // src/redux/slices/authSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { loginUser, signupUser, loginAdmin, signupAdmin, fetchUserProfile } from '../../services/authServices'; // Import service functions
-import api from '../../services/api'; // Import the configured api instance
+import { loginUser, signupUser, loginAdmin, signupAdmin, fetchUserProfile } from '../../services/authServices'; // Import service functions 
+import { useNavigate } from 'react-router-dom';
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -24,11 +24,14 @@ const initialState: AuthState = {
 // Async actions
 export const userLogin = createAsyncThunk(
   'auth/userLogin',
+  
   async (credentials: { email: string, password: string }, { rejectWithValue }) => {
     try {
       const response = await loginUser(credentials.email, credentials.password);
+     
       localStorage.setItem('token', response.token);
-      return response; // Expect { token, user }
+    
+       return response; // Expect { token, user }
     } catch (error:any) {
       return rejectWithValue(error.response?.data || 'Login failed');
     }
@@ -76,8 +79,10 @@ export const loadUserFromToken = createAsyncThunk(
   'auth/loadUserFromToken',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetchUserProfile();
-      return response; // Expect user object
+      const token = localStorage.getItem('token');
+      const response = await fetchUserProfile(token!); 
+      console.log('User profile loaded successfully:', response); 
+      return response;// Expect user object
     } catch (error: any) {
       return rejectWithValue(error.response?.data || 'Failed to load user');
     }
@@ -135,6 +140,7 @@ const authSlice = createSlice({
       .addCase(loadUserFromToken.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
+        state.user = action.payload;
       })
       .addCase(loadUserFromToken.rejected, (state, action) => {
         state.loading = false;

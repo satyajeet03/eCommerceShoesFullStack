@@ -21,7 +21,13 @@ export const signupAdmin = async (name: string, email: string, password: string)
     return response.data; // Expect { token, user }
 };
 // Fetch user cart data
-export const fetchUserProfile = async () => {
-    const response = await api.get('/users/profile'); // Token is automatically added by interceptor
+export const fetchUserProfile = async (token:any) => {
+    // const token = localStorage.getItem('token');
+    if (!token) throw new Error('No token found');
+    const response = await api.get('users/profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }); // Token is automatically added by interceptor
     return response.data; // Expect user object
   };

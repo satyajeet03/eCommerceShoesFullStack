@@ -9,7 +9,6 @@ import { AppDispatch, RootState } from './redux/store';
 
 function App() {
 
- 
   return (
    <>
   <ErrorBoundary>

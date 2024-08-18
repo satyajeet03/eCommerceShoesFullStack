@@ -1,28 +1,31 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { userLogin, adminLogin } from '../redux/slices/authSlices';
-import { AppDispatch } from '../redux/store';
+import { AppDispatch, RootState } from '../redux/store';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false); // Toggle for user/admin login
+  const [password, setPassword] = useState(''); 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
       await dispatch(userLogin({ email, password }));
       navigate('/store')
-    
+    alert("hh")
   };
 
   const handleSignupRedirect = () => {
     navigate('/signup');
   };
-
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/store');
+    }
+  }, [isAuthenticated, navigate]);
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
