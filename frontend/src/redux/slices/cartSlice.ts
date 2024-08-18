@@ -1,5 +1,6 @@
 import { createSlice,createAsyncThunk, PayloadAction } from '@reduxjs/toolkit'; 
 import axios from 'axios';
+import {  addToCartApi, updateQuantity } from '../../services/authServices';
 
 export interface CartItem {
   _id: string;
@@ -20,7 +21,15 @@ const initialState: CartState = {
     error: null,
   };
   
- 
+  interface ProductToAdd {
+    productId: string;
+    quantity: number;
+  }
+  
+  // Define the payload type expected by the API
+  interface AddToCartPayload {
+    items: ProductToAdd[];
+  }
 // Thunk to fetch cart data
 // export const fetchCart = createAsyncThunk('cart/fetchCart', async (token: string, _, thunkAPI) => {
 //     try {
@@ -56,62 +65,161 @@ export const fetchCart = createAsyncThunk(
       }
     }
   );
-const cartSlice = createSlice({
-  name: 'cart',
-  initialState,
-  reducers: {
-    
-    addToCart(state, action: PayloadAction<CartItem>) {
-        if (!Array.isArray(state.products)) {
-            state.products = []; // Initialize as an empty array if undefined
-          }
-          
-      const product = action.payload;
-      const existingProduct = state.products.find(p => p._id === product._id);
 
-      if (existingProduct) {
-         // Update quantity if product already exists in the cart
-         existingProduct.quantity += product.quantity;
-      } else 
-      {
-        state.products.push(product);
-        // state.products.push({ ...product, quantity: 1 });
+  // Thunk to add items to the cart
+
+  // export const addToCartData = createAsyncThunk(
+  //   'cart/addToCartData',
+  //   async (products: ProductToAdd[], { rejectWithValue }) => {
+  //     try {
+  //       const payload: AddToCartPayload = {
+  //         items: products,
+  //       };
+  //        await addToCartApi(payload);
+  //       const token = localStorage.getItem('token'); // Adjust based on where you store your token
+  //       if (token) {
+  //         const updatedCart = await fetchCart(token);
+  //         return updatedCart;
+  //       } else {
+  //         throw new Error('Token not found');
+  //       }
+  //     } catch (error: any) {
+  //       return rejectWithValue(error.message);
+  //     }
+  //   }
+  // );
+  export const addToCartData = createAsyncThunk(
+    'cart/addToCartData',
+    async (products: ProductToAdd[], { rejectWithValue, dispatch }) => {
+      try {
+        const payload: AddToCartPayload = {
+          items: products,
+        };
+        await addToCartApi(payload);
+  
+        // Fetch updated cart data after adding items
+        const token = localStorage.getItem('token'); // Adjust based on where you store your token
+        if (token) {
+          // Fetch cart data and return
+          const updatedCart = await dispatch(fetchCart(token)).unwrap();
+          return updatedCart;
+        } else {
+          throw new Error('Token not found');
+        }
+      } catch (error: any) {
+        return rejectWithValue(error.message);
       }
-    },
-    removeFromCart(state, action: PayloadAction<string>) {
-      const productId = action.payload;
-      state.products = state.products.filter(product => product._id !== productId);
-    },
-    updateQuantity(state, action: PayloadAction<{ _id: string; quantity: number }>) {
-        const item = state.products.find(item => item._id === action.payload._id);
+    }
+  );
+  
+  // export const updateQuantityData = createAsyncThunk(
+  //   'cart/updateQuantityData',
+  //   async (payload: { productId: string; quantity: number}, { rejectWithValue }) => {
+  //     try {
+  //       const data = await updateQuantity(payload.productId, payload.quantity);
+  //       return data;
+  //     } catch (error: any) {
+  //       return rejectWithValue(error.message);
+  //     }
+  //   }
+  // );
+
+  export const updateQuantityData = createAsyncThunk(
+    'cart/updateQuantityData',
+    async (payload: { productId: string; quantity: number }, { rejectWithValue, dispatch }) => {
+      try {
+        // Optimistically update the state
+        dispatch(updateQuantityInState(payload));
+  
+        // Call the API
+        await updateQuantity(payload.productId, payload.quantity);
+  
+        // Fetch the updated cart
+        const token = localStorage.getItem('token');
+        if (token) {
+          const updatedCart = await dispatch(fetchCart(token)).unwrap();
+          return updatedCart;
+        } else {
+          throw new Error('Token not found');
+        }
+      } catch (error: any) {
+        // Revert the state if the API call fails
+        dispatch(revertQuantityUpdate(payload));
+        return rejectWithValue(error.message);
+      }
+    }
+  );
+  
+  
+  const cartSlice = createSlice({
+    name: 'cart',
+    initialState,
+    reducers: {
+      removeFromCart(state, action: PayloadAction<string>) {
+        const productId = action.payload;
+        state.products = state.products.filter(product => product._id !== productId);
+      },
+      clearCart(state) {
+        state.products = [];
+      },
+      updateQuantityInState(state, action: PayloadAction<{ productId: string; quantity: number }>) {
+        const item = state.products.find(product => product._id === action.payload.productId);
         if (item) {
           item.quantity += action.payload.quantity;
           if (item.quantity <= 0) {
-            state.products = state.products.filter(i => i._id !== action.payload._id);
+            state.products = state.products.filter(product => product._id !== action.payload.productId);
           }
         }
-      },   
-    clearCart(state) {
-      state.products = [];
+      },
+      revertQuantityUpdate(state, action: PayloadAction<{ productId: string; quantity: number }>) {
+        const item = state.products.find(product => product._id === action.payload.productId);
+        if (item) {
+          item.quantity -= action.payload.quantity; // Revert to previous quantity
+          if (item.quantity <= 0) {
+            state.products = state.products.filter(product => product._id !== action.payload.productId);
+          }
+        }
+      },
     },
-  },
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchCart.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchCart.fulfilled, (state, action) => {
-        console.log('Action Payload:', action.payload); 
-        state.products = action.payload;
-        state.loading = false;
-      })
-      .addCase(fetchCart.rejected, (state, action) => {
-        console.log('Fetch Cart Rejected:', action.payload);
-        state.error = action.payload as string;
-        state.loading = false;
-      });
-  },
-});
-
-export const { addToCart, removeFromCart,updateQuantity, clearCart } = cartSlice.actions;
-export default cartSlice.reducer;
+    extraReducers: (builder) => {
+      builder
+        .addCase(fetchCart.pending, (state) => {
+          state.loading = true;
+        })
+        .addCase(fetchCart.fulfilled, (state, action) => {
+          state.products = action.payload;
+          state.loading = false;
+        })
+        .addCase(fetchCart.rejected, (state, action) => {
+          state.error = action.payload as string;
+          state.loading = false;
+        })
+        .addCase(addToCartData.pending, (state) => {
+          state.loading = true;
+        })
+        .addCase(addToCartData.fulfilled, (state, action) => {
+          state.products = action.payload; // Updated cart after adding items
+          state.loading = false;
+        })
+        .addCase(addToCartData.rejected, (state, action) => {
+          state.error = action.payload as string;
+          state.loading = false;
+        })
+        .addCase(updateQuantityData.pending, (state) => {
+          state.loading = true;
+        })
+        .addCase(updateQuantityData.fulfilled, (state, action) => {
+          state.products = action.payload; // Updated cart after updating quantity
+          state.loading = false;
+        })
+        .addCase(updateQuantityData.rejected, (state, action) => {
+          state.error = action.payload as string;
+          state.loading = false;
+        });
+    },
+  });
+  
+  export const { removeFromCart, clearCart ,updateQuantityInState, revertQuantityUpdate } = cartSlice.actions;
+  export default cartSlice.reducer;
+  
+ 

@@ -31,3 +31,18 @@ export const fetchUserProfile = async (token:any) => {
       }); // Token is automatically added by interceptor
     return response.data; // Expect user object
   };
+ 
+
+  // Define the API call for adding items to the cart
+  export const addToCartApi = async (payload: { items: { productId: string; quantity: number }[] }) => {
+    const response = await api.post('/cart', payload);
+    return response.data;
+  };
+  
+
+export const updateQuantity = async (productId: string, quantity: number) => {
+    const response = await api.put('/cart/update', { productId, quantity }, {
+      
+    });
+    return response.data;
+};

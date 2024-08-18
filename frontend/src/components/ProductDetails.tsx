@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
-import { addToCart, removeFromCart } from '../redux/slices/cartSlice';
+import {   removeFromCart } from '../redux/slices/cartSlice';
 import { AppDispatch, RootState } from '../redux/store';
 import { useDispatch, useSelector } from 'react-redux';
-import {updateQuantity} from '../redux/slices/cartSlice'
+// import {updateQuantity} from '../redux/slices/cartSlice'
 interface Shoe {
   _id: string;
   name: string;
@@ -27,38 +27,38 @@ const ProductsDetails: React.FC = () => {
       .catch(err => console.log(err));
   }, [id]);
 
-  const handleAddToCart = (shoe: Shoe) => {
-    if (quantityInCart === 0) {
-      // Add item to cart with quantity 1
-      dispatch(addToCart({
-        _id: shoe._id,
-        name: shoe.name,
-        price: shoe.price,
-        quantity: 1,
-      }));
-    } else {
-      // Increase quantity if item is already in cart
-      dispatch(updateQuantity({
-        _id: shoe._id,
-        quantity:  1,
-      }));
-    }
-  };
+  // const handleAddToCart = (shoe: Shoe) => {
+  //   if (quantityInCart === 0) {
+  //     // Add item to cart with quantity 1
+  //     dispatch(addToCart({
+  //       _id: shoe._id,
+  //       name: shoe.name,
+  //       price: shoe.price,
+  //       quantity: 1,
+  //     }));
+  //   } else {
+  //     // Increase quantity if item is already in cart
+  //     dispatch(updateQuantity({
+  //       _id: shoe._id,
+  //       quantity:  1,
+  //     }));
+  //   }
+  // };
 
 //   const handleRemoveFromCart = (shoe: Shoe) => {
 //     dispatch(removeFromCart(shoe._id));
 //     setQuantity(prev => Math.max(prev - 1, 0));
 //   };
-const handleRemoveFromCart = (shoe: Shoe) => {
-    if (quantityInCart > 1) {
-      dispatch(updateQuantity({
-        _id: shoe._id,
-        quantity: -1
-      }));
-    } else {
-      dispatch(removeFromCart(shoe._id));
-    }
-  };
+// const handleRemoveFromCart = (shoe: Shoe) => {
+//     if (quantityInCart > 1) {
+//       dispatch(updateQuantity({
+//         _id: shoe._id,
+//         quantity: -1
+//       }));
+//     } else {
+//       dispatch(removeFromCart(shoe._id));
+//     }
+//   };
   if (!shoe) return <div>Loading...</div>;
 
   return (
@@ -78,7 +78,7 @@ const handleRemoveFromCart = (shoe: Shoe) => {
           <form className="mt-10">
             {/* ... (existing code for options like colors and sizes) */}
           </form>
-          {quantityInCart === 0 ? (
+          {/* {quantityInCart === 0 ? (
             <button
               onClick={() => handleAddToCart(shoe)}
               className="mt-10 flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-8 py-3 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
@@ -101,7 +101,7 @@ const handleRemoveFromCart = (shoe: Shoe) => {
                 +
               </button>
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="py-10 lg:col-span-2 lg:col-start-1 lg:border-r lg:border-gray-200 lg:pb-16 lg:pr-8 lg:pt-6">

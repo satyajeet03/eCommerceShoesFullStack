@@ -2,10 +2,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../redux/store';
 import { useEffect } from 'react';
 import { fetchShoes } from '../redux/slices/shoesSlice';
-import { addToCart, fetchCart } from '../redux/slices/cartSlice';
-import { useAuth } from '../hooks/useAuth';
-import { loadUserFromToken, setToken } from '../redux/slices/authSlices';
-import Header from '../components/Header';
+import { addToCartData, fetchCart } from '../redux/slices/cartSlice';
+import { useAuth } from '../hooks/useAuth'; 
 
 const Store = () => {
   const productsInCart = useSelector((state: RootState) => state.cart.products );
@@ -32,7 +30,10 @@ const Store = () => {
   if (error) return <div>Error: {error}</div>;
 
   const handleAddToCart = (product: any) => {
-    dispatch(addToCart({ ...product, quantity: 1 }));
+    dispatch(addToCartData([{ productId: product._id, quantity: 1 }]));
+    if (isAuthenticated && token) {
+      dispatch(fetchCart(token)); // Fetch cart data with token
+    }
   };
 
 //   const isInCart = (productId: string) => {
