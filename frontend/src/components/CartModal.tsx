@@ -35,12 +35,12 @@
 //       const handleIncreaseQuantity = (_id: string) => {
 //         dispatch(updateQuantityData({ productId: _id, quantity: 1 }));
 //       };
-    
+
 //       const handleDecreaseQuantity = (_id: string) => {
 //         dispatch(updateQuantityData({ productId: _id, quantity: -1 }));
 //       };   
 //       const { isAuthenticated } = useSelector((state: RootState) => state.auth);
- 
+
 //       const handleCheckout = () => {
 //         if (!isAuthenticated) {
 //           // Store the intended destination for redirection after login
@@ -115,7 +115,7 @@
 //                               <div className="flex flex-1 items-end justify-between text-sm">
 //                               <div className="flex items-center">
 //                                   <button 
-                               
+
 //                                     type="button" 
 //                                     onClick={() => handleDecreaseQuantity(product._id)}
 //                                     className="rounded-md border border-transparent bg-yellow-700 px-3 py-1 text-base font-medium text-white hover:bg-black-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
@@ -206,7 +206,8 @@ export default function CartModal({ openModal, closeModal }: ModalProps) {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const { token } = useAuth();
-
+  const updatingProductId = useSelector((state: RootState) => state.cart.updatingProductId);
+  const updatingSubtotal = useSelector((state: RootState) => state.cart.updatingSubtotal);
   useEffect(() => {
     if (token) {
       dispatch(fetchCart(token));
@@ -217,7 +218,7 @@ export default function CartModal({ openModal, closeModal }: ModalProps) {
     dispatch(removeFromCart(id));
   };
 
-  const subtotal = products.reduce((total: number, product: { price: number; quantity: number; }) => 
+  const subtotal = products.reduce((total: number, product: { price: number; quantity: number; }) =>
     total + product.price * product.quantity, 0
   ).toFixed(2);
 
@@ -225,13 +226,18 @@ export default function CartModal({ openModal, closeModal }: ModalProps) {
     dispatch(updateQuantityData({ productId, quantity }));
   }, 300), [dispatch]);
 
-  const handleIncreaseQuantity = (_id: string) => {
-    debouncedUpdateQuantity(_id, 1);
+  const handleIncreaseQuantity = (_id: string, currentQuantity: number) => {
+    const newQuantity = currentQuantity + 1;
+    debouncedUpdateQuantity(_id, newQuantity);
   };
 
-  const handleDecreaseQuantity = (_id: string) => {
-    debouncedUpdateQuantity(_id, -1);
+  const handleDecreaseQuantity = (_id: string, currentQuantity: number) => {
+    if (currentQuantity > 1) {
+      const newQuantity = currentQuantity - 1;
+      debouncedUpdateQuantity(_id, newQuantity);
+    }
   };
+
 
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
@@ -308,16 +314,18 @@ export default function CartModal({ openModal, closeModal }: ModalProps) {
                                 <div className="flex items-center">
                                   <button
                                     type="button"
-                                    onClick={() => handleDecreaseQuantity(product._id)}
+                                    onClick={() => handleDecreaseQuantity(product._id, product.quantity)}
                                     className="rounded-md border border-transparent bg-yellow-700 px-3 py-1 text-base font-medium text-white hover:bg-black-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                                     disabled={product.quantity <= 1}
                                   >
                                     -
                                   </button>
-                                  <p className="mx-2 text-gray-500">Qty {product.quantity}</p>
+                                  <p className="mx-2 text-gray-500">
+                                    {updatingProductId === product._id ? 'Updating...' : `Qty ${product.quantity}`}
+                                  </p>
                                   <button
                                     type="button"
-                                    onClick={() => handleIncreaseQuantity(product._id)}
+                                    onClick={() => handleIncreaseQuantity(product._id, product.quantity)}
                                     className="rounded-md border border-transparent bg-yellow-700 px-3 py-1 text-base font-medium text-white hover:bg-black-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                                   >
                                     +
@@ -339,7 +347,11 @@ export default function CartModal({ openModal, closeModal }: ModalProps) {
                 <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
                   <div className="flex justify-between text-base font-medium text-gray-900">
                     <p>Subtotal</p>
-                    <p>{subtotal}</p>
+                    {updatingSubtotal ? (
+                      <p className="mx-2 text-gray-500">Updating subtotal...</p>
+                    ) : (
+                      <p className="mx-2 text-gray-500">Subtotal: ${subtotal}</p>
+                    )}
                   </div>
                   <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
                   <div className="mt-6">

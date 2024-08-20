@@ -12,12 +12,16 @@ export interface CartItem {
 interface CartState {
   products: CartItem[];
   loading: boolean;
+  updatingProductId: string | null;
+  updatingSubtotal: boolean; // Track whether subtotal is being updated
   error: string | null;
 
 }
 const initialState: CartState = {
     products: [],
     loading: false,
+    updatingProductId: null,
+    updatingSubtotal: false, // Initialize as false
     error: null,
   };
   
@@ -30,15 +34,7 @@ const initialState: CartState = {
   interface AddToCartPayload {
     items: ProductToAdd[];
   }
-// Thunk to fetch cart data
-// export const fetchCart = createAsyncThunk('cart/fetchCart', async (token: string, _, thunkAPI) => {
-//     try {
-//       const response = await fetchUserCart();
-//       return response.products;
-//     } catch (error:any) {
-//       return thunkAPI.rejectWithValue(error.response?.data || 'Failed to fetch cart');
-//     }
-//   });
+ 
 export const fetchCart = createAsyncThunk(
     'cart/fetchCart',
     async (token: string, { rejectWithValue }) => {
@@ -66,28 +62,7 @@ export const fetchCart = createAsyncThunk(
     }
   );
 
-  // Thunk to add items to the cart
-
-  // export const addToCartData = createAsyncThunk(
-  //   'cart/addToCartData',
-  //   async (products: ProductToAdd[], { rejectWithValue }) => {
-  //     try {
-  //       const payload: AddToCartPayload = {
-  //         items: products,
-  //       };
-  //        await addToCartApi(payload);
-  //       const token = localStorage.getItem('token'); // Adjust based on where you store your token
-  //       if (token) {
-  //         const updatedCart = await fetchCart(token);
-  //         return updatedCart;
-  //       } else {
-  //         throw new Error('Token not found');
-  //       }
-  //     } catch (error: any) {
-  //       return rejectWithValue(error.message);
-  //     }
-  //   }
-  // );
+ 
   export const addToCartData = createAsyncThunk(
     'cart/addToCartData',
     async (products: ProductToAdd[], { rejectWithValue, dispatch }) => {
@@ -112,17 +87,7 @@ export const fetchCart = createAsyncThunk(
     }
   );
   
-  // export const updateQuantityData = createAsyncThunk(
-  //   'cart/updateQuantityData',
-  //   async (payload: { productId: string; quantity: number}, { rejectWithValue }) => {
-  //     try {
-  //       const data = await updateQuantity(payload.productId, payload.quantity);
-  //       return data;
-  //     } catch (error: any) {
-  //       return rejectWithValue(error.message);
-  //     }
-  //   }
-  // );
+ 
 
   export const updateQuantityData = createAsyncThunk(
     'cart/updateQuantityData',
@@ -155,6 +120,12 @@ export const fetchCart = createAsyncThunk(
     name: 'cart',
     initialState,
     reducers: {
+      setUpdatingProductId(state, action: PayloadAction<string | null>) {
+        state.updatingProductId = action.payload;
+      },
+      setUpdatingSubtotal(state, action: PayloadAction<boolean>) {
+        state.updatingSubtotal = action.payload;
+      },
       removeFromCart(state, action: PayloadAction<string>) {
         const productId = action.payload;
         state.products = state.products.filter(product => product._id !== productId);
@@ -205,21 +176,27 @@ export const fetchCart = createAsyncThunk(
           state.error = action.payload as string;
           state.loading = false;
         })
-        .addCase(updateQuantityData.pending, (state) => {
+        .addCase(updateQuantityData.pending, (state,action) => {
           state.loading = true;
+          state.updatingProductId = action.meta.arg.productId;
+          state.updatingSubtotal = true; // Start tracking subtotal update
         })
         .addCase(updateQuantityData.fulfilled, (state, action) => {
           state.products = action.payload; // Updated cart after updating quantity
           state.loading = false;
+          state.updatingProductId = null; // Reset after update
+          state.updatingSubtotal = false; // Reset after update
         })
         .addCase(updateQuantityData.rejected, (state, action) => {
           state.error = action.payload as string;
           state.loading = false;
+          state.updatingProductId = null; // Reset after error
+          state.updatingSubtotal = false; // Reset after error
         });
     },
   });
   
-  export const { removeFromCart, clearCart ,updateQuantityInState, revertQuantityUpdate } = cartSlice.actions;
+  export const { removeFromCart, clearCart ,updateQuantityInState, revertQuantityUpdate ,setUpdatingProductId ,setUpdatingSubtotal  } = cartSlice.actions;
   export default cartSlice.reducer;
   
  
